@@ -21,6 +21,22 @@ class Utils{
 	
     static char *getStringFromProgmem(char *buffer, byte idx, const char* const stringTable[]);
     static unsigned int getUIntArrayFromProgmem(unsigned int *buffer, byte idx, const unsigned int* const intArrayTable[], const unsigned int intArrayLengths[]);
+
+    template <typename T> static T bytesTo(byte *bytes, int numberOfBytes, bool littleEndian){
+        //TODO: cater for not littleEndian
+        T retVal = 0;
+        for(int i = 0; i < numberOfBytes; i++){
+            ((byte *)&retVal)[i] = bytes[i];
+        }
+        return retVal;
+    };
+
+    template <typename T> static void toBytes(T t, byte *bytes, bool littleEndian){
+        //TODO: cater for not littleEndian
+        for(int i = 0; i < sizeof(t); i++){
+          bytes[i] = ((byte*)&t)[i]; 
+        }
+    }
 };
 
 } //end namespace
