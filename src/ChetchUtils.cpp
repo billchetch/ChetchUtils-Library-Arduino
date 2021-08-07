@@ -75,7 +75,8 @@ int Utils::parseNameValuePair(char *s2parse, const char *delimiter, char *result
   int ct = 0;
   while (s2parse && *s2parse && ct < 2*maxResults) {
     results[ct] = strsep(&s2parse, delimiter);
-    results[ct + 1] = strchrnul(results[ct], '=');
+    results[ct + 1] = strchr(results[ct], '=');
+    if(results[ct + 1] == NULL)results[ct + 1] = &results[ct][strlen(results[ct])]; //TODO: check this!!!
     if (*results[2*ct]) *results[ct + 1]++ = '\0';
 
     if (decodeUrl) {
