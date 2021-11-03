@@ -123,6 +123,10 @@ namespace Chetch{
         *TIMSKn &= ~(1 << enableBitPosition);   
         enabled = false;
     }
+
+    bool ISRTimer::isEnabled(){
+        return enabled;
+    }
   
     void ISRTimer::setCompareA(uint16_t cnt, uint16_t comp){
         *TCNTn = cnt; //set counter
@@ -133,6 +137,10 @@ namespace Chetch{
         *OCRnA  = comp; //set compare
     }
 
+    uint16_t ISRTimer::getCompareA(){
+        return *OCRnA;
+    }
+
     bool ISRTimer::freeToExecute(uint16_t executionEnd){
         return ISRTimer::freeToExecute(this->priority, executionEnd);
     }
@@ -141,4 +149,7 @@ namespace Chetch{
         return (microseconds * 16) / prescaler;
     }
 
+    uint16_t ISRTimer::ticksToMicros(uint32_t ticks){
+        return (ticks * prescaler) / 16;
+    }
 } //end namespace

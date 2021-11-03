@@ -33,12 +33,16 @@ namespace Chetch{
             static inline bool freeToExecute(byte priority, uint16_t executionEnd);
 
             ISRTimer(byte timerNumber, TimerMode mode, uint16_t prescaler);
+
+            bool isEnabled();
 			void setCompareA(uint16_t cnt, uint16_t comp);
-            void ISRTimer::setCompareA(uint16_t comp);
+            void setCompareA(uint16_t comp);
+            uint16_t getCompareA();
 			void enable();
 			void disable();
             bool freeToExecute(uint16_t executionEnd);
             uint16_t microsToTicks(uint32_t microseconds);
+            uint16_t ticksToMicros(uint32_t ticks);
     }; //end class
 } //end namespae
 #endif
