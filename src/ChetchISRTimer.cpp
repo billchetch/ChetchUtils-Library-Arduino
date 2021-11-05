@@ -23,6 +23,8 @@ namespace Chetch{
         }
     }
 
+    //executionEnd is in microseconds ... checks if there is enough time before a timer with a higher priority
+    //will fire
     static bool ISRTimer::freeToExecute(byte priority, uint16_t executionEnd){
         if(timerIndex <= 0 || priority <= 1)return true;
 
@@ -36,7 +38,7 @@ namespace Chetch{
             if(*timer->TIFRn & (1 << timer->pendingISRBitPosition))return false;   //pending ISR 
         }
 
-        if(timerIndex <= 1 || priority <= 1)return true;
+        if(timerIndex <= 1 || priority <= 2)return true;
         timer = timers[1];
         if(timer->enabled){
             nextISR = ((*timer->OCRnA - *timer->TCNTn) * timer->prescaler) / 16;
@@ -44,7 +46,7 @@ namespace Chetch{
             if(*timer->TIFRn & (1 << timer->pendingISRBitPosition))return false;   //pending ISR 
         }
 
-        if(timerIndex <= 2 || priority <= 2)return true;
+        if(timerIndex <= 2 || priority <= 3)return true;
         timer = timers[2];
         if(timer->enabled){
             nextISR = ((*timer->OCRnA - *timer->TCNTn) * timer->prescaler) / 16;
@@ -141,6 +143,7 @@ namespace Chetch{
         return *OCRnA;
     }
 
+    //executionEnd is in microseconds
     bool ISRTimer::freeToExecute(uint16_t executionEnd){
         return ISRTimer::freeToExecute(this->priority, executionEnd);
     }
