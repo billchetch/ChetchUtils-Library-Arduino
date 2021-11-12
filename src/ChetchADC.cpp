@@ -1,7 +1,7 @@
 #include "ChetchADC.h"
 
 namespace Chetch{
-    static void CADC::init(AnalogReference ref, bool triggerInterrupt){
+    static void CADC::init(AnalogReference ref){
         switch(ref){
             case AnalogReference::AREF_DEFAULT:
                 //leave everything alone
@@ -15,8 +15,11 @@ namespace Chetch{
                 //TODO: set register
                 break;
         }
+    }
 
-        
+    static void CADC::init(AnalogReference ref, bool triggerInterrupt){
+        init(ref);
+
         if(triggerInterrupt){
             //TODO: set ADCRSA register for interrupts
         } else {
