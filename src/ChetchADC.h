@@ -11,11 +11,15 @@ namespace Chetch{
               AREF_DEFAULT,
               AREF_EXTERNAL,
               AREF_INTERNAL,
+              AREF_INTERNAL1V1,
+              AREF_INTERNAL2V56,
             };
 
         public:
             static void init(AnalogReference ref);
+            static void init(bool triggerInterrupt);
             static void init(AnalogReference ref, bool triggerInterrupt);
+            static AnalogReference aref();
             static void startRead(int analogPin);
 			static bool isReading();
             static uint16_t readResult();
