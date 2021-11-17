@@ -3,24 +3,25 @@
 namespace Chetch{
     static void CADC::init(AnalogReference ref){
         switch(ref){
-            case AnalogReference::AREF_DEFAULT:
-                //leave everything alone
-                break;
-
             case AnalogReference::AREF_EXTERNAL:
-                ADMUX &= ~((1 << REFS0) | (1 << REFS1)); //set external ref
+                ADMUX &= ~((1 << REFS0) | (1 << REFS1)); //set external ref by turning off REFSI1 and REFS2
                 break;
 
             case AnalogReference::AREF_INTERNAL:
+                ADMUX &= ~(1 << REFS1); //turn off REFS1 bit
+                ADMUX |= (1 << REFS0);  //turn on REFS0 bit
                 //TODO: set register
                 break;
 
             case AnalogReference::AREF_INTERNAL1V1:
                 //TODO: set register
+                ADMUX |= (1 << REFS1); //turn on REFS1 bit
+                ADMUX &= ~(1 << REFS0);  //turn off REFS0 bit
                 break;
 
             case AnalogReference::AREF_INTERNAL2V56:
-                //TODO: set register
+                ADMUX |= (1 << REFS1); //turn on REFS1 bit
+                ADMUX |= (1 << REFS0);  //turn on REFS0 bit
                 break;
 
         }
@@ -59,10 +60,6 @@ namespace Chetch{
             case 3: //Internal2v56
                 //Serial.println("Internal2v56");
                 return AnalogReference::AREF_INTERNAL2V56;
-
-            default:
-                //Serial.println("Default");
-                return AnalogReference::AREF_DEFAULT;
         }
     }
 
