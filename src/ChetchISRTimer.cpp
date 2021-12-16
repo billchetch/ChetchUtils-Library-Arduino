@@ -1,11 +1,11 @@
 #include "ChetchISRTimer.h"
 
 namespace Chetch{
-    
+    //static stuff
     byte ISRTimer::timerIndex = 0;
     ISRTimer* ISRTimer::timers[ISRTimer::MAX_TIMERS];
 
-    static ISRTimer *ISRTimer::create(byte timerNumber, uint16_t prescaler, TimerMode mode = ISRTimer::TimerMode::COMPARE){
+    ISRTimer *ISRTimer::create(byte timerNumber, uint16_t prescaler, TimerMode mode){
         for(byte i = 0; i < timerIndex; i++){
             if(timers[i]->timerNumber == timerNumber){
                 return timers[i];
@@ -25,7 +25,7 @@ namespace Chetch{
 
     //executionEnd is in microseconds ... checks if there is enough time before a timer with a higher priority
     //will fire
-    static bool ISRTimer::freeToExecute(byte priority, uint16_t executionEnd){
+    bool ISRTimer::freeToExecute(byte priority, uint16_t executionEnd){
         if(timerIndex <= 0 || priority <= 1)return true;
 
         static ISRTimer *timer;
@@ -56,6 +56,7 @@ namespace Chetch{
   
         return true;
     }
+    //end static stuff
   
     ISRTimer::ISRTimer(byte timerNumber, TimerMode mode, uint16_t prescaler){
         this->timerNumber = timerNumber;

@@ -1,8 +1,8 @@
 #include "ChetchADC.h"
 
 namespace Chetch{
-    static void CADC::init(AnalogReference ref){
-        switch(ref){
+    void CADC::init(AnalogReference areference){
+        switch(areference){
             case AnalogReference::AREF_EXTERNAL:
                 ADMUX &= ~((1 << REFS0) | (1 << REFS1)); //set external ref by turning off REFSI1 and REFS2
                 break;
@@ -27,7 +27,7 @@ namespace Chetch{
         }
     }
 
-    static void CADC::init(bool triggerInterrupt){
+    void CADC::init(bool triggerInterrupt){
         if(triggerInterrupt){
             //TODO: set ADCRSA register for interrupts
         } else {
@@ -37,12 +37,12 @@ namespace Chetch{
         ADCSRB = 0x00;
     }
 
-    static void CADC::init(AnalogReference ref, bool triggerInterrupt){
-        init(ref);
+    void CADC::init(AnalogReference areference, bool triggerInterrupt){
+        init(areference);
         init(triggerInterrupt);
     }
 
-    static CADC::AnalogReference CADC::aref(){
+    CADC::AnalogReference CADC::aref(){
         //read the ADMUX register REFS0 and REFS1 bits
         switch(ADMUX >> REFS0){
             case 0: //External
@@ -63,11 +63,11 @@ namespace Chetch{
         }
     }
 
-    static bool CADC::isReading(){
+    bool CADC::isReading(){
         return (ADCSRA & (1 << ADSC)) > 0;
     }
 
-    static void CADC::startRead(int analogPin){
+    void CADC::startRead(int analogPin){
         if(analogPin - A0 >= 0)analogPin = analogPin - A0;
 
         //set the pin
@@ -77,7 +77,7 @@ namespace Chetch{
         ADCSRA |= (1 << ADSC);
     }
 
-    static uint16_t CADC::readResult(){
+    uint16_t CADC::readResult(){
         return (ADCL | (ADCH << 8)); 
     }
 } //end namespace

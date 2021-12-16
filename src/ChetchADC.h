@@ -15,9 +15,9 @@ namespace Chetch{
             };
 
         public:
-            static void init(AnalogReference ref);
+            static void init(AnalogReference areference);
             static void init(bool triggerInterrupt);
-            static void init(AnalogReference ref, bool triggerInterrupt);
+            static void init(AnalogReference areference, bool triggerInterrupt);
             static AnalogReference aref();
             static void startRead(int analogPin);
 			static bool isReading();
