@@ -5,6 +5,7 @@
 namespace Chetch{
 
     byte CInterrupt::pinCount = 0;
+    CInterrupt::Callback CInterrupt::callbacks[];
 
     bool CInterrupt::isSupportedPin(uint8_t pinNumber)
     {
