@@ -9,12 +9,15 @@ namespace Chetch{
 
     bool CInterrupt::isSupportedPin(uint8_t pinNumber)
     {
-        if (pinNumber > 2) {
+ #ifdef ARDUINO_AVR_MEGA2560
+        if (pinNumber == 2 || pinNumber == 3 || (pinNumber >= 10 && pinNumber <= 15) || (pinNumber >= 18 && pinNumber <= 21)){            
             return true;
-        }
-        else {
+        } else {
             return false;
         }
+#elif
+        return false;
+#endif
     }
 
     void CInterrupt::handleInterrupt()
@@ -27,7 +30,8 @@ namespace Chetch{
             callbacks[2].onInterrupt(arduinoInterruptedPin, callbacks[2].tag);
         } else if (arduinoInterruptedPin == callbacks[3].pin) {
             callbacks[3].onInterrupt(arduinoInterruptedPin, callbacks[3].tag);
-        }
+        } //else if.... add more here if required ... don't forget to increase MAX_PINS
+        
     }
 
     bool CInterrupt::addInterrupt(uint8_t pinNumber, uint8_t tag, void (*onInterrupt)(uint8_t p, uint8_t t), uint8_t mode) {
