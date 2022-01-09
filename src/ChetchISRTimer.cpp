@@ -65,6 +65,7 @@ namespace Chetch{
 
         bool validTimer = true;
         switch(timerNumber){
+#if defined(ARDUINO_AVR_MEGA2560)
             case 3:
                 TCCR3A = 0; // set entire TCCRnA register to 0
                 TCCR3B = 0; // same for TCCRnB
@@ -108,7 +109,7 @@ namespace Chetch{
                 this->enableBitPosition = OCIE4A;
                 this->pendingISRBitPosition = OCF4A;
                 break;
-
+#endif
              default:
                 validTimer = false;
                 break;

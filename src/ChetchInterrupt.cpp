@@ -15,7 +15,7 @@ namespace Chetch{
         } else {
             return false;
         }
-#elif
+#else
         return false;
 #endif
     }

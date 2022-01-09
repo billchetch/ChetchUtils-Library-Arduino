@@ -1,7 +1,12 @@
 #include "ChetchServo.h"
 
-#define TIMER_NUMBER 3
-#define TIMER_PRESCALER 8
+#if defined(ARDUINO_AVR_MEGA2560)
+    #define TIMER_NUMBER 3
+    #define TIMER_PRESCALER 8
+#else
+    #define TIMER_NUMBER 0
+    #define TIMER_PRESCALER 0
+#endif
 
 namespace Chetch{
 #if TIMER_NUMBER == 3
@@ -16,7 +21,7 @@ namespace Chetch{
     Servo* Servo::instances[Servo::MAX_INSTANCES];
 
     Servo* Servo::create(ServoModel servoModel){
-        if(instanceIndex >= MAX_INSTANCES){
+        if(instanceIndex >= MAX_INSTANCES || TIMER_NUMBER <= 0){
             return NULL;
         } else {
             if(instanceIndex == 0){
