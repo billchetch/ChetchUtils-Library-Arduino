@@ -37,6 +37,30 @@ namespace Chetch{
         }
     }
 
+    void Servo::destroy(Servo* servo) {
+        if (servo->attached()) {
+            servo->detach();
+        }
+        int idx2destroy = -1;
+        for (int i = 0; i < instanceIndex; i++) {
+            if (instances[i] == servo) {
+                idx2destroy = i;
+                break;
+            }
+        }
+
+        if (idx2destroy >= 0) {
+            delete instances[idx2destroy];
+            for (int i = idx2destroy; i < instanceIndex - 1; i++) {
+                instances[i] = instances[i + 1];
+            }
+            instanceIndex--;
+            if (currentInstance > idx2destroy) {
+                currentInstance--;
+            }
+        }
+    }
+
     void Servo::handleTimerInterrupt(){
         static Servo* servo = instances[currentInstance];
 

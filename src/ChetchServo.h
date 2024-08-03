@@ -39,10 +39,12 @@ namespace Chetch{
 		public:
             
             static Servo* create(ServoModel servoModel);
+            static void destroy(Servo* servo);
             static void handleTimerInterrupt();
         
         private:
             Servo(ServoModel servoModel);
+            //~Servo();
             void writeMicroseconds(unsigned long microseconds);
             
         public:
