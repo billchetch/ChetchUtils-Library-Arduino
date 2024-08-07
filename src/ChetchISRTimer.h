@@ -3,21 +3,33 @@
 
 #include <Arduino.h>
 
+#if defined(ARDUINO_AVR_MEGA2560)
+    #define USE_ISR_TIMER_NUMBER3
+    #define USE_ISR_TIMER_NUMBER4
+#else
+
+#endif
+
 namespace Chetch{
     
     class ISRTimer{
+
 		public:
 			enum class TimerMode{
               NOT_SET,
               COMPARE,
             };
 
-            static const byte MAX_TIMERS = 3;
+            static const byte MAX_TIMERS = 6; //this should be defined
+            static const byte MAX_CALLBACKS = 4;
+
             static ISRTimer* timers[];
-            static byte timerIndex;
+            //static byte timerIndex;
+            static byte timerCount;
     
+            //locals
             byte timerNumber;
-            byte priority;
+            //byte priority;
             TimerMode timerMode;
             uint16_t prescaler;
             uint16_t enableBitPosition; //enable/disable bit
@@ -28,11 +40,30 @@ namespace Chetch{
             volatile uint8_t *TIFRn;
             volatile bool enabled = false;	
 	
+            typedef void (*ISRTimerCallback)();
+            
+            ISRTimerCallback callbacks[MAX_CALLBACKS];
+            uint16_t interruptCounts[MAX_CALLBACKS]; //how many times the interrupt is called before calling the callback
+            uint16_t maxInterruptCount = 0; //calculated from comparison counts .. 
+
+            unsigned long maxInterruptDuration = 0;
+
+        private:
+            int getCallbackIdx(ISRTimerCallback callback);
+
 		public:
             static ISRTimer *create(byte timerNumber, uint16_t prescaler, TimerMode mode = ISRTimer::TimerMode::COMPARE);
-            static inline bool freeToExecute(byte priority, uint16_t executionEnd);
+            static void handleTimerInterrupt(byte timerIndex);
+            static uint16_t gcd(uint16_t a, uint16_t b);
 
-            ISRTimer(byte timerNumber, TimerMode mode, uint16_t prescaler);
+            //static inline bool freeToExecute(byte priority, uint16_t executionEnd);
+
+            ISRTimer(byte timerNumber, uint16_t prescaler, TimerMode mode);
+
+            bool registerCallback(ISRTimerCallback callback, byte priority, uint16_t comp = 0);
+            uint16_t setCompareValue(ISRTimerCallback callback, uint16_t comp);
+
+            void onTimerInterrupt();
 
             bool isEnabled();
 			void setCompareA(uint16_t cnt, uint16_t comp);
@@ -41,8 +72,10 @@ namespace Chetch{
 			void enable();
 			void disable();
             bool freeToExecute(uint16_t executionEnd);
-            uint16_t microsToTicks(uint32_t microseconds);
-            uint16_t ticksToMicros(uint32_t ticks);
+            uint32_t microsToTicks(uint32_t microseconds); //how many ticks of the timer
+            uint32_t ticksToMicros(uint32_t ticks); //how many micros for a certin number of ticks
+            uint32_t microsToInterrupts(ISRTimerCallback callback, uint32_t microseconds); //how many interrupts are called in a given period of micros
+            uint32_t interruptsToMicros(ISRTimerCallback callback, uint32_t interrupts); //how many micros are a certain number of interrupts
     }; //end class
 } //end namespae
 #endif
