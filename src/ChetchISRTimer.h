@@ -20,11 +20,14 @@ namespace Chetch{
               COMPARE,
             };
 
+            static const int LOWEST_PRIORITY = -1;
+            static const int HIGHEST_PRIORITY = -2;
+
             static const byte MAX_TIMERS = 6; //this should be defined
-            static const byte MAX_CALLBACKS = 4;
+            static const byte MAX_CALLBACKS = 2; //maximum number per timer
 
             static ISRTimer* timers[];
-            //static byte timerIndex;
+            static ISRTimer* getTimer(byte timerNumber);
             static byte timerCount;
     
             //locals
@@ -43,10 +46,13 @@ namespace Chetch{
             typedef void (*ISRTimerCallback)();
             
             ISRTimerCallback callbacks[MAX_CALLBACKS];
+            ISRTimerCallback singleCallback = NULL; //if only one is registered this is used in the ISR function for speed
             uint16_t interruptCounts[MAX_CALLBACKS]; //how many times the interrupt is called before calling the callback
             uint16_t maxInterruptCount = 0; //calculated from comparison counts .. 
+            byte callbackCount = 0;
 
-            unsigned long maxInterruptDuration = 0;
+            volatile unsigned long interruptDuration = 0;
+            volatile unsigned long maxInterruptDuration = 0;
 
         private:
             int getCallbackIdx(ISRTimerCallback callback);
@@ -60,7 +66,7 @@ namespace Chetch{
 
             ISRTimer(byte timerNumber, uint16_t prescaler, TimerMode mode);
 
-            bool registerCallback(ISRTimerCallback callback, byte priority, uint16_t comp = 0);
+            bool registerCallback(ISRTimerCallback callback, int priority, uint16_t comp = 0);
             uint16_t setCompareValue(ISRTimerCallback callback, uint16_t comp);
 
             void onTimerInterrupt();
@@ -71,7 +77,7 @@ namespace Chetch{
             uint16_t getCompareA();
 			void enable();
 			void disable();
-            bool freeToExecute(uint16_t executionEnd);
+            
             uint32_t microsToTicks(uint32_t microseconds); //how many ticks of the timer
             uint32_t ticksToMicros(uint32_t ticks); //how many micros for a certin number of ticks
             uint32_t microsToInterrupts(ISRTimerCallback callback, uint32_t microseconds); //how many interrupts are called in a given period of micros

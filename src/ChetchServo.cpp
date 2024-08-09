@@ -14,19 +14,7 @@ namespace Chetch{
     byte Servo::instanceCount = 0;
     byte Servo::currentInstance = 0; //current instance for reading ISR
     Servo* Servo::instances[Servo::MAX_INSTANCES];
-
-
-    uint16_t __gcd(uint16_t a, uint16_t b) {
-        uint16_t temp;
-        while (b != 0)
-        {
-            temp = a % b;
-            a = b;
-            b = temp;
-        }
-        return a;
-    }
-
+    
     Servo* Servo::create(ServoModel servoModel){
         if(instanceCount >= MAX_INSTANCES || TIMER_NUMBER <= 0){
             return NULL;
@@ -38,7 +26,7 @@ namespace Chetch{
 
                 cli();
                 timer = ISRTimer::create(TIMER_NUMBER, TIMER_PRESCALER, ISRTimer::TimerMode::COMPARE);
-                timer->registerCallback(&Servo::handleTimerInterrupt, 1);
+                timer->registerCallback(&Servo::handleTimerInterrupt, ISRTimer::HIGHEST_PRIORITY);
                 sei();
                 if (timer == NULL)return NULL;
             }
@@ -54,27 +42,44 @@ namespace Chetch{
 
             //create the instance, set the index for future ref and update the count
             Servo* servo = new Servo(servoModel);
-            //instance->setInstanceIndex(idx);
             instances[idx] = servo;
             instanceCount++;
-
-            unsigned int resolution = 5;
-            unsigned int m = resolution * instances[0]->getMicrosForOneDegree();
-            for (byte i = 1; i < MAX_INSTANCES; i++) {
-                m = ISRTimer::gcd(m, resolution * instances[i]->getMicrosForOneDegree());
-            }
-            unsigned int comp = timer->microsToTicks(m);
-            Serial.print("Setting servo timer comp to ");
-            Serial.println(comp);
-
-            timer->setCompareValue(&Servo::handleTimerInterrupt, comp);
-
             return servo;
         }
     }
 
+    void Servo::destroy(Servo* servo) {
+        for (int i = 0; i < MAX_INSTANCES; i++) {
+            if (instances[i] == servo) {
+                if (servo->attached()) {
+                    servo->detach();
+                }
+
+                delete instances[i];
+                instances[i] = NULL;
+                instanceCount--;
+            }
+        }
+    }
+
+    void Servo::updateTimerCompareValue() {
+        if (instanceCount == 0)return;
+
+        Servo* servo = instances[0];
+        unsigned int m = servo->resolution * servo->getMicrosForOneDegree();
+        for (byte i = 1; i < MAX_INSTANCES; i++) {
+            servo = instances[i];
+            m = ISRTimer::gcd(m, servo->resolution * servo->getMicrosForOneDegree());
+        }
+        unsigned int comp = timer->microsToTicks(m);
+        timer->setCompareValue(&Servo::handleTimerInterrupt, comp);
+
+        return servo;
+    }
+
     void Servo::handleTimerInterrupt(){
         static Servo* servo = instances[currentInstance];
+
         servo->onTimerInterrupt();
     }
 
@@ -101,14 +106,9 @@ namespace Chetch{
         if (attached()) {
             detach();
         }
-        instances[instanceIndex] = NULL;
-        instanceCount--;
     }
 
-    void Servo::setInstanceIndex(byte idx) {
-        instanceIndex = idx;
-    }
-
+    
     unsigned int Servo::getMicrosForOneDegree() {
         return microsForOneDegree;
     }
@@ -117,6 +117,7 @@ namespace Chetch{
         servoPin = pinNumber;
         attachedToPin = true;
         if (!timer->isEnabled()) {
+            updateTimerCompareValue();
             timer->enable();
         }
         servoPulse = LOW;
@@ -128,7 +129,7 @@ namespace Chetch{
         attachedToPin = false;
         timer->disable();
     }
-
+        
     bool Servo::attached(){
         return attachedToPin;
     }
@@ -140,23 +141,23 @@ namespace Chetch{
         this->trimFactor = trimFactor;
     }
 
+    void Servo::setResolution(unsigned int resolution) {
+        this->resolution = resolution;
+    }
+
     void Servo::onTimerInterrupt() {
-        if (position < 0)return;
 
         if (servoPulse == LOW && interruptCount >= pulseLowInInterrupts) {
             //here we want to go high
             servoPulse = HIGH;
             digitalWrite(servoPin, servoPulse);
+            //PORTH = PORTH | 0b00010000;
             interruptCount = 0;
-            /*if (startedTimingOn == 0) {
-                startedTimingOn = micros();
-            }*/
+            
         }
         else if (servoPulse == HIGH && interruptCount >= pulseHighInInterrupts) {
-            /*if (measuredPulseDuration == 0 && startedTimingOn > 0) {
-                measuredPulseDuration = micros() - startedTimingOn;
-            }*/
             servoPulse = LOW;
+            //PORTH = PORTH & 0b11101111;
             digitalWrite(servoPin, servoPulse);
             interruptCount = 0;
         }
@@ -173,13 +174,13 @@ namespace Chetch{
         if(microseconds < min)microseconds = min;
         if(microseconds > max)microseconds = max;
 
-        Serial.print("Attemption to write microseconds: "); Serial.println(microseconds);
+        //Serial.print("Attemption to write microseconds: "); Serial.println(microseconds);
 
         pulseHighInInterrupts = timer->microsToInterrupts(&Servo::handleTimerInterrupt, microseconds);
         pulseLowInInterrupts = timer->microsToInterrupts(&Servo::handleTimerInterrupt, pwmDuration - microseconds);
 
-        Serial.print("Setting pulse high in interrupts to: "); Serial.println(pulseHighInInterrupts);
-        Serial.print("Setting pulse low in interrupts to: "); Serial.println(pulseLowInInterrupts);
+        //Serial.print("Setting pulse high in interrupts to: "); Serial.println(pulseHighInInterrupts);
+        //Serial.print("Setting pulse low in interrupts to: "); Serial.println(pulseLowInInterrupts);
     }
 
     int Servo::write(int pos){

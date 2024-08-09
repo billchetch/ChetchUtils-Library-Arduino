@@ -20,8 +20,6 @@ namespace Chetch{
             static byte currentInstance; //each time an ISR is fired this updates so as to read the next instance voltage
             static Servo* instances[];
             
-            byte instanceIndex = 0;
-
             //servo characteristics (may vary based on model)
             ServoModel model;
             unsigned int min = 1000; //in micros
@@ -29,6 +27,8 @@ namespace Chetch{
             unsigned long pwmDuration = 0; //also thought of as frequency of servo
             unsigned int rangeOfMotion = 180; //standard
             unsigned int microsForOneDegree = 0; //in microseconds to move one degree 
+            unsigned int resolution = 1; //higher value resolution means less precision but more stability regarding timer issues
+
 
             //setup
             bool attachedToPin = false;
@@ -42,6 +42,8 @@ namespace Chetch{
             unsigned int interruptCount = 0;
             unsigned int pulseHighInInterrupts = 0; //in timer ticks, High + Low should be the pwm duration in ticks
             unsigned int pulseLowInInterrupts = 0;
+
+
             unsigned long startedMoving = 0;
             unsigned long moveDuration = 0;
             int direction = 0; //1 = anti-clockwise, -1 = clockwise
@@ -53,18 +55,20 @@ namespace Chetch{
 
 		public:
             static Servo* create(ServoModel servoModel);
+            static void destroy(Servo *servo);
             static void handleTimerInterrupt();
+            static void updateTimerCompareValue();
         
             Servo(ServoModel servoModel);
             ~Servo();
 
-        private:
             void onTimerInterrupt();
+
+        private:
             void writeMicroseconds(unsigned long microseconds);
             
         public:
             //creation
-            void setInstanceIndex(byte idx);
             unsigned int getMicrosForOneDegree();
 
             //setup
@@ -72,6 +76,7 @@ namespace Chetch{
             bool attached();
             void detach();
             void setTrim(int trimFactor, bool usingDegrees = true);
+            void setResolution(unsigned int resolution);
 
             //operation
             int write(int pos); //in degrees (0 to 180)

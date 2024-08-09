@@ -4,13 +4,14 @@ namespace Chetch{
 #if defined(USE_ISR_TIMER_NUMBER3)
     ISR(TIMER3_COMPA_vect) {
         //we pass the index (not the number) for sake of speed
-        ISRTimer::handleTimerInterrupt(2);
+        //ISRTimer::timers[2]->callbacks[0](); // onTimerInterrupt();
+        ISRTimer::timers[2]->onTimerInterrupt();
     }
 #endif
 #if defined(USE_ISR_TIMER_NUMBER4)
     ISR(TIMER4_COMPA_vect) {
         //we pass the index (not the number) for sake of speed
-        ISRTimer::handleTimerInterrupt(3);
+        ISRTimer::timers[3]->onTimerInterrupt();
     }
 #endif
 
@@ -39,11 +40,16 @@ namespace Chetch{
         return timers[timerIndex];
     }
 
+    ISRTimer* ISRTimer::getTimer(byte timerNumber) {
+        if (timerNumber < 1)timerNumber = 1;
+        if (timerNumber > MAX_TIMERS)timerNumber = MAX_TIMERS;
+
+        byte timerIndex = timerNumber - 1;
+        return timers[timerIndex];
+    }
 
     void ISRTimer::handleTimerInterrupt(byte timerIndex) {
-        if (timers[timerIndex] != NULL) {
-            timers[timerIndex]->onTimerInterrupt();
-        }
+        timers[timerIndex]->onTimerInterrupt();
     }
 
     uint16_t ISRTimer::gcd(uint16_t a, uint16_t b) {
@@ -56,41 +62,6 @@ namespace Chetch{
         }
         return a;
     }
-
-    //executionEnd is in microseconds ... checks if there is enough time before a timer with a higher priority
-    //will fire
-    /*bool ISRTimer::freeToExecute(byte priority, uint16_t executionEnd) {
-        if(timerIndex <= 0 || priority <= 1)return true;
-
-        static ISRTimer *timer;
-        
-        uint16_t nextISR;
-        timer = timers[0];
-        if(timer->enabled){
-            nextISR = ((*timer->OCRnA - *timer->TCNTn) * timer->prescaler) / 16;
-            if(executionEnd >= nextISR)return false;  
-            if(*timer->TIFRn & (1 << timer->pendingISRBitPosition))return false;   //pending ISR 
-        }
-
-        if(timerIndex <= 1 || priority <= 2)return true;
-        timer = timers[1];
-        if(timer->enabled){
-            nextISR = ((*timer->OCRnA - *timer->TCNTn) * timer->prescaler) / 16;
-            if(executionEnd >= nextISR)return false;  
-            if(*timer->TIFRn & (1 << timer->pendingISRBitPosition))return false;   //pending ISR 
-        }
-
-        if(timerIndex <= 2 || priority <= 3)return true;
-        timer = timers[2];
-        if(timer->enabled){
-            nextISR = ((*timer->OCRnA - *timer->TCNTn) * timer->prescaler) / 16;
-            if(executionEnd >= nextISR)return false;  
-            if(*timer->TIFRn & (1 << timer->pendingISRBitPosition))return false;   //pending ISR 
-        }
-  
-        return true;
-    }*/
-    //end static stuff
   
     ISRTimer::ISRTimer(byte timerNumber, uint16_t prescaler, TimerMode mode){
         this->timerNumber = timerNumber;
@@ -157,20 +128,48 @@ namespace Chetch{
         if(validTimer)disable();
     }
   
-    bool ISRTimer::registerCallback(ISRTimerCallback callback, byte priority, uint16_t comp) {
-        int idx = priority - 1;
+    bool ISRTimer::registerCallback(ISRTimerCallback callback, int priority, uint16_t comp) {
+        int idx = -1;
+        switch (priority) {
+        case LOWEST_PRIORITY:
+            idx = MAX_CALLBACKS - 1;
+            break;
+
+        case HIGHEST_PRIORITY:
+            idx = 0;
+            break;
+
+        default:
+            idx = priority - 1;
+            break;
+        }
+        
+        //check the index is meaningful
+        if (idx < 0 || idx >= MAX_CALLBACKS) {
+            return false;
+        }
+
+        //look for an available slot
         if (callbacks[idx] != NULL) {
             return false;
         }
         else {
-            //register callback
+            //is this already registered?
             for (int i = 0; i < MAX_CALLBACKS; i++) {
                 if (callbacks[i] == callback) {
                     return false;
                 }
             }
             
+            //here is a fresh registration
             callbacks[idx] = callback;
+            callbackCount++;
+            if (callbackCount == 1) {
+                singleCallback = callback;
+            }
+            else {
+                singleCallback = NULL;
+            }
             if (comp > 0) {
                 return setCompareValue(callback, comp) != 0;
             }
@@ -219,36 +218,51 @@ namespace Chetch{
                 if (interruptCounts[i] > maxInterruptCount)maxInterruptCount = interruptCounts[i];
             }
         }
+
         return maxInterruptCount;
     }
 
     void ISRTimer::onTimerInterrupt() {
-        static unsigned long interruptDuration = 0;
         static uint16_t interruptCount = 0;
+        static uint16_t counters[MAX_CALLBACKS];
 
-        unsigned long started = micros();
+        if (singleCallback != NULL) {
+            singleCallback();
+            return;
+        }
 
-        interruptCount++;
-
-        if (callbacks[0] != NULL && interruptCount % interruptCounts[0] == 0) {
-            callbacks[0]();
-        }
-        if (callbacks[1] != NULL && interruptCount % interruptCounts[1] == 0) {
-            callbacks[1]();
-        }
-        if (callbacks[2] != NULL && interruptCount % interruptCounts[2] == 0) {
-            callbacks[2]();
-        }
-        if (callbacks[3] != NULL && interruptCount % interruptCounts[3] == 0) {
-            callbacks[3]();
-        }
-        
+        //unsigned long started = micros();
         if (interruptCount == maxInterruptCount) {
             interruptCount = 0;
+            counters[0] = interruptCounts[0];
+            counters[1] = interruptCounts[1];
+            //counters[2] = interruptCounts[2];
+            //counters[3] = interruptCounts[3];
         }
 
-        interruptDuration = micros() - started;
-        maxInterruptDuration = interruptDuration;
+        interruptCount++;
+        
+        if (callbacks[0] != NULL) {
+            if (interruptCounts[0] == 1) {
+                callbacks[0]();
+            }
+            else if(counters[0] == interruptCount) {
+                counters[0] += interruptCounts[0];
+                callbacks[0]();
+            }
+        }
+        if (callbacks[1] != NULL) {
+            if (interruptCounts[1] == 1) {
+                callbacks[1]();
+            }
+            else if (counters[1] == interruptCount) {
+                counters[1] += interruptCounts[1];
+                callbacks[1]();
+            }
+        }
+        
+        //interruptDuration = micros() - started;
+        //if(interruptDuration > maxInterruptDuration)maxInterruptDuration = interruptDuration;
     }
 
     void ISRTimer::enable(){
@@ -277,11 +291,6 @@ namespace Chetch{
     uint16_t ISRTimer::getCompareA(){
         return *OCRnA;
     }
-
-    //executionEnd is in microseconds
-    /*bool ISRTimer::freeToExecute(uint16_t executionEnd) {
-        return ISRTimer::freeToExecute(this->priority, executionEnd);
-    }*/
 
     uint32_t ISRTimer::microsToTicks(uint32_t microseconds){
         return (microseconds * 16) / prescaler;
