@@ -318,7 +318,7 @@ namespace Chetch{
         int idx = getCallbackIdx(callback);
         if (idx == -1)return 0;
 
-        uint16_t comp = interruptCounts[idx] * getCompareA();
+        uint32_t comp = interruptCounts[idx] * getCompareA();
         return ticksToMicros(comp * interrupts);
     }
 } //end namespace

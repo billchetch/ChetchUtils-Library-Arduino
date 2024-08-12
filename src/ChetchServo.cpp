@@ -167,12 +167,10 @@ namespace Chetch{
     }
 
     void Servo::writeMicroseconds(unsigned long microseconds){
-        if(!attached())return;
-
         microseconds += trimFactor;
 
-        if(microseconds < min)microseconds = min;
-        if(microseconds > max)microseconds = max;
+        if (microseconds < min)microseconds = min;
+        if (microseconds > max)microseconds = max;
 
         //Serial.print("Attemption to write microseconds: "); Serial.println(microseconds);
 
