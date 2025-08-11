@@ -26,7 +26,7 @@ namespace Chetch{
 
                 cli();
                 timer = ISRTimer::create(TIMER_NUMBER, TIMER_PRESCALER, ISRTimer::TimerMode::COMPARE);
-                timer->registerCallback(&Servo::handleTimerInterrupt, ISRTimer::HIGHEST_PRIORITY);
+                timer->addListener(0, &Servo::handleTimerInterrupt, ISRTimer::HIGHEST_PRIORITY);
                 sei();
                 if (timer == NULL)return NULL;
             }
@@ -72,12 +72,12 @@ namespace Chetch{
             m = ISRTimer::gcd(m, servo->resolution * servo->getMicrosForOneDegree());
         }
         unsigned int comp = timer->microsToTicks(m);
-        timer->setCompareValue(&Servo::handleTimerInterrupt, comp);
+        timer->setCompareValue(0, comp);
 
         return servo;
     }
 
-    void Servo::handleTimerInterrupt(){
+    void Servo::handleTimerInterrupt(uint8_t id){
         static Servo* servo = instances[currentInstance];
 
         servo->onTimerInterrupt();

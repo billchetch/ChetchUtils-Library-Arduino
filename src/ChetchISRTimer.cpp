@@ -1,17 +1,36 @@
 #include "ChetchISRTimer.h"
 
 namespace Chetch{
+/*
+PRESCALER INFO
+Use CSNn constants where N = Timer number and n is bit position (2, 1, 0).
+e.g. Timer 1 has bit position constants :  CS12, CS11, CS10
+000 : no clock source TC1 is OFF
+1 << CS10 = 001 : divide by 1 (if 16Mhz chip then 16 times every micro second)
+1 << CS11 = 010 : divide by 8 (if 16Mhz chip then 2 times every micro second)
+1 << CS11 | 1 << CS10 = 011 : divide by 64 (if 16Mhz chip then every 16 microseconds)
+1 << CS12 = 100 : divide by 256 (if 16Mhz chip then every 64 microseconds)
+1 << CS12 | 1 << CS10 = 101 : divide by 1024 (if 16Mhz chip then 256 microseconds)
+*/
+
+#if defined(USE_ISR_TIMER_NUMBER1)
+    ISR(TIMER1_COMPA_vect) {
+        ISRTimer::timers[0]->onTimerInterrupt();
+    }
+#endif
+#if defined(USE_ISR_TIMER_NUMBER2)
+    ISR(TIMER2_COMPA_vect) {
+       // ISRTimer::timers[1]->onTimerInterrupt();
+    }
+#endif
 #if defined(USE_ISR_TIMER_NUMBER3)
     ISR(TIMER3_COMPA_vect) {
-        //we pass the index (not the number) for sake of speed
-        //ISRTimer::timers[2]->callbacks[0](); // onTimerInterrupt();
-        ISRTimer::timers[2]->onTimerInterrupt();
+        //ISRTimer::timers[2]->onTimerInterrupt();
     }
 #endif
 #if defined(USE_ISR_TIMER_NUMBER4)
     ISR(TIMER4_COMPA_vect) {
-        //we pass the index (not the number) for sake of speed
-        ISRTimer::timers[3]->onTimerInterrupt();
+        //ISRTimer::timers[3]->onTimerInterrupt();
     }
 #endif
 
@@ -19,15 +38,15 @@ namespace Chetch{
     //static stuff
     //byte ISRTimer::timerIndex = 0;
     byte ISRTimer::timerCount = 0;
-    ISRTimer* ISRTimer::timers[ISRTimer::MAX_TIMERS];
+    ISRTimer* ISRTimer::timers[ISRTimer::MAx_INSTANCES];
 
     ISRTimer *ISRTimer::create(byte timerNumber, uint16_t prescaler, TimerMode mode){
         if (timerNumber < 1)timerNumber = 1;
-        if (timerNumber > MAX_TIMERS)timerNumber = MAX_TIMERS;
+        if (timerNumber > MAx_INSTANCES)timerNumber = MAx_INSTANCES;
 
         //make clean on first use
         if (timerCount == 0) {
-            for (byte i = 0; i < MAX_TIMERS; i++) {
+            for (byte i = 0; i < MAx_INSTANCES; i++) {
                 timers[i] = NULL;
             }
         }
@@ -42,14 +61,10 @@ namespace Chetch{
 
     ISRTimer* ISRTimer::getTimer(byte timerNumber) {
         if (timerNumber < 1)timerNumber = 1;
-        if (timerNumber > MAX_TIMERS)timerNumber = MAX_TIMERS;
+        if (timerNumber > MAx_INSTANCES)timerNumber = MAx_INSTANCES;
 
         byte timerIndex = timerNumber - 1;
         return timers[timerIndex];
-    }
-
-    void ISRTimer::handleTimerInterrupt(byte timerIndex) {
-        timers[timerIndex]->onTimerInterrupt();
     }
 
     uint16_t ISRTimer::gcd(uint16_t a, uint16_t b) {
@@ -69,13 +84,15 @@ namespace Chetch{
         this->prescaler = prescaler;
 
         for (int i = 0; i < MAX_CALLBACKS; i++) {
-            callbacks[i] = NULL;
+            callbacks[i].onTimer = NULL;
             interruptCounts[i] = 0;
         }
 
         bool validTimer = true;
-        switch(timerNumber){
+        uint16_t prescale = 0;
 #if defined(ARDUINO_AVR_MEGA2560)
+        
+        switch(timerNumber){
             case 3:
                 TCCR3A = 0; // set entire TCCRnA register to 0
                 TCCR3B = 0; // same for TCCRnB
@@ -87,7 +104,7 @@ namespace Chetch{
           
                 //Set prescaler
                 //TODO: vary this depending on prescaler value
-                TCCR3B |= (1 << CS31); 
+                TCCR3B |= prescale; 
 
                 //keep pointers so that we can generalise functionality
                 this->TIMSKn = &TIMSK3;
@@ -109,7 +126,7 @@ namespace Chetch{
           
                 //Set prescaler
                 //TODO: vary this depending on prescaler value
-                TCCR4B |= (1 << CS41); 
+                TCCR4B |= prescaler; 
 
                 //keep pointers so that we can generalise functionality
                 this->TIMSKn = &TIMSK4;
@@ -119,16 +136,58 @@ namespace Chetch{
                 this->enableBitPosition = OCIE4A;
                 this->pendingISRBitPosition = OCF4A;
                 break;
-#endif
-             default:
+
+            default:
                 validTimer = false;
                 break;
         }
+#elif defined(ARDUINO_AVR_NANO)
+        switch(prescaler){
+            case 0: prescale = 0; break;
+            case 1: prescale = 1 << CS10; break;
+            case 8: prescale = 1 << CS11; break;
+            case 64: prescale = 1 << CS11 | 1 << CS10; break;
+            case 256: prescale = 1 << CS12; break;
+            case 1024: prescale = CS12 | 1 << CS10 ; break;
+            default:
+                prescale = 0;
+                break;
+        }
+
+        switch(timerNumber){
+            case 1:
+                //TCNT1, OCR1A, OCR1B, TCCR1A, TCCR1B, and TIMSK1
+                TCCR1A = 0; // set entire TCCRnA register to 0
+                TCCR1B = 0; // same for TCCRnB
+                TCNT1  = 0; //initialize counter value to 0
+          
+                //Turn on CTC mode
+                //TODO: vary this depending on mode
+                TCCR1B |= (1 << WGM12);
+          
+                //Set prescaler
+                //TODO: vary this depending on prescaler value
+                TCCR1B |= prescale; 
+
+                //keep pointers so that we can generalise functionality
+                this->TIMSKn = &TIMSK1;
+                this->TCNTn = &TCNT1;
+                this->OCRnA = &OCR1A;
+                this->TIFRn = &TIFR1;
+                this->enableBitPosition = OCIE1A;
+                this->pendingISRBitPosition = OCF1A;
+                break;
+
+            default:
+                validTimer = false;
+                break;
+        }
+#endif
 
         if(validTimer)disable();
     }
   
-    bool ISRTimer::registerCallback(ISRTimerCallback callback, int priority, uint16_t comp) {
+    bool ISRTimer::addListener(uint8_t id, TimerListener listener, int priority, uint16_t comp) {
         int idx = -1;
         switch (priority) {
         case LOWEST_PRIORITY:
@@ -149,29 +208,47 @@ namespace Chetch{
             return false;
         }
 
+        //check we even have a listener
+        if (listener == NULL) {
+            return false;
+        }
+
+        //ID must be greater than 0
+        if(id == 0){
+            return false;
+        }
+
         //look for an available slot
-        if (callbacks[idx] != NULL) {
+        if (callbacks[idx].onTimer != NULL) {
             return false;
         }
         else {
             //is this already registered?
             for (int i = 0; i < MAX_CALLBACKS; i++) {
-                if (callbacks[i] == callback) {
+                if (callbacks[i].id == id && callbacks[i].onTimer != NULL) {
                     return false;
                 }
             }
             
             //here is a fresh registration
-            callbacks[idx] = callback;
+            Serial.print("Adding listener with ID: ");
+            Serial.println(id);
+            Serial.print("To callback at index: ");
+            Serial.println(idx);
+            Serial.print("And set compare value to: ");
+            Serial.println(comp);
+            callbacks[idx].id = id;
+            callbacks[idx].onTimer = listener;
             callbackCount++;
-            if (callbackCount == 1) {
-                singleCallback = callback;
-            }
-            else {
+
+            if(callbackCount == 1){
+                singleCallback = &callbacks[idx];
+            } else {
                 singleCallback = NULL;
             }
+            
             if (comp > 0) {
-                return setCompareValue(callback, comp) != 0;
+                return setCompareValue(id, comp) != 0;
             }
             else {
                 return true;
@@ -179,10 +256,18 @@ namespace Chetch{
         }
     }
 
-    int ISRTimer::getCallbackIdx(ISRTimerCallback callback) {
+    bool ISRTimer::removeListener(uint8_t id){
+        int idx = getCallbackIdx(id);
+        if(idx >= 0){
+            callbacks[idx].id = 0;
+            callbacks[idx].onTimer = NULL;
+        }
+    }
+
+    int ISRTimer::getCallbackIdx(uint8_t id) {
         int idx = -1;
         for (int i = 0; i < MAX_CALLBACKS; i++) {
-            if (callbacks[i] == callback) {
+            if (callbacks[i].id == id) {
                 idx = i;
                 break;
             }
@@ -190,10 +275,12 @@ namespace Chetch{
         return idx;
     }
 
-    uint16_t ISRTimer::setCompareValue(ISRTimerCallback callback, uint16_t comp) {
+    uint16_t ISRTimer::setCompareValue(uint8_t id, uint16_t comp) {
         //find the index of the callback
-        int idx = getCallbackIdx(callback);
-        if (idx == -1)return 0;
+        int idx = getCallbackIdx(id);
+        if (idx == -1){
+            return 0;
+        }
         
         //now work out the new compare value
         uint16_t currentComp = getCompareA();
@@ -226,11 +313,14 @@ namespace Chetch{
         static uint16_t interruptCount = 0;
         static uint16_t counters[MAX_CALLBACKS];
 
+        if (callbackCount == 0)return;
+
         if (singleCallback != NULL) {
-            singleCallback();
+            singleCallback->onTimer(singleCallback->id);
             return;
         }
 
+        /*
         //unsigned long started = micros();
         if (interruptCount == maxInterruptCount) {
             interruptCount = 0;
@@ -242,24 +332,24 @@ namespace Chetch{
 
         interruptCount++;
         
-        if (callbacks[0] != NULL) {
+        if (callbacks[0].onTimer != NULL) {
             if (interruptCounts[0] == 1) {
-                callbacks[0]();
+                callbacks[0].onTimer((callbacks[0].id));
             }
             else if(counters[0] == interruptCount) {
                 counters[0] += interruptCounts[0];
-                callbacks[0]();
+                callbacks[0].onTimer((callbacks[0].id));
             }
         }
-        if (callbacks[1] != NULL) {
+        if (callbacks[1].onTimer != NULL) {
             if (interruptCounts[1] == 1) {
-                callbacks[1]();
+                callbacks[1].onTimer((callbacks[1].id));
             }
             else if (counters[1] == interruptCount) {
                 counters[1] += interruptCounts[1];
-                callbacks[1]();
+                callbacks[1].onTimer((callbacks[1].id));
             }
-        }
+        }*/
         
         //interruptDuration = micros() - started;
         //if(interruptDuration > maxInterruptDuration)maxInterruptDuration = interruptDuration;
@@ -300,13 +390,13 @@ namespace Chetch{
         return (ticks * prescaler) / 16;
     }
 
-    uint32_t ISRTimer::microsToInterrupts(ISRTimerCallback callback, uint32_t microseconds) {
-        int idx = getCallbackIdx(callback);
+    uint32_t ISRTimer::microsToInterrupts(uint8_t id, uint32_t microseconds) {
+        int idx = getCallbackIdx(id);
         if (idx == -1)return 0;
 
         uint16_t comp = interruptCounts[idx] * getCompareA();
         if (comp == 0) {
-            return;
+            return 0;
         }
         else {
             uint16_t ticks = microsToTicks(microseconds);
@@ -314,8 +404,8 @@ namespace Chetch{
         }   
     }
 
-    uint32_t ISRTimer::interruptsToMicros(ISRTimerCallback callback, uint32_t interrupts) {
-        int idx = getCallbackIdx(callback);
+    uint32_t ISRTimer::interruptsToMicros(uint8_t id, uint32_t interrupts) {
+        int idx = getCallbackIdx(id);
         if (idx == -1)return 0;
 
         uint32_t comp = interruptCounts[idx] * getCompareA();

@@ -7,10 +7,12 @@ namespace Chetch{
     
     class CInterrupt {
         private:
+            typedef void (*InterruptListener)(uint8_t p, uint8_t t);
+
             struct Callback {
                 uint8_t pin = 0;
                 uint8_t tag = 0;
-                void (*onInterrupt)(uint8_t p, uint8_t t) = NULL;
+                InterruptListener onInterrupt = NULL;
             };
 
             static const byte MAX_PINS = 4;
@@ -22,8 +24,8 @@ namespace Chetch{
             static void handleInterrupt();
 
         public:
-            static bool addInterrupt(uint8_t pinNumber, uint8_t tag, void (*onInterrupt)(uint8_t p, uint8_t t), uint8_t mode);
-            static bool removeInterrupt(uint8_t pinNumber);
+            static bool addInterruptListener(uint8_t pinNumber, uint8_t tag, InterruptListener listener, uint8_t mode);
+            static bool removeInterruptListener(uint8_t pinNumber);
     }; //end class
 } //end namespae
 #endif

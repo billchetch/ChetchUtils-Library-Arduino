@@ -56,7 +56,7 @@ namespace Chetch{
 		public:
             static Servo* create(ServoModel servoModel);
             static void destroy(Servo *servo);
-            static void handleTimerInterrupt();
+            static void handleTimerInterrupt(uint8_t id);
             static void updateTimerCompareValue();
         
             Servo(ServoModel servoModel);

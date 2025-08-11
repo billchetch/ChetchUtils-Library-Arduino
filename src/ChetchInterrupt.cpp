@@ -15,6 +15,18 @@ namespace Chetch{
         } else {
             return false;
         }
+#elif defined(ARDUINO_AVR_UNO)
+        if (pinNumber == 2 || pinNumber == 3){            
+            return true;
+        } else {
+            return false;
+        }
+#elif defined(ARDUINO_AVR_NANO)
+        if (pinNumber == 2 || pinNumber == 3){            
+            return true;
+        } else {
+            return false;
+        }
 #else
         return false;
 #endif
@@ -34,7 +46,7 @@ namespace Chetch{
         
     }
 
-    bool CInterrupt::addInterrupt(uint8_t pinNumber, uint8_t tag, void (*onInterrupt)(uint8_t p, uint8_t t), uint8_t mode) {
+    bool CInterrupt::addInterruptListener(uint8_t pinNumber, uint8_t tag, InterruptListener listener, uint8_t mode) {
         if (pinCount >= MAX_PINS || !isSupportedPin(pinNumber))return false;
 
         for (byte i = 0; i < MAX_PINS; i++) {
@@ -43,7 +55,7 @@ namespace Chetch{
             if (callbacks[i].pin == 0) {
                 callbacks[i].pin = pinNumber;
                 callbacks[i].tag = tag;
-                callbacks[i].onInterrupt = onInterrupt;
+                callbacks[i].onInterrupt = listener;
                 pinCount++;
                 break;
             }
@@ -54,7 +66,7 @@ namespace Chetch{
     }
 
 
-    bool CInterrupt::removeInterrupt(uint8_t pinNumber) {
+    bool CInterrupt::removeInterruptListener(uint8_t pinNumber) {
         bool found = false;
         for (byte i = 0; i < MAX_PINS; i++) {
             if (callbacks[i].pin == pinNumber) {
