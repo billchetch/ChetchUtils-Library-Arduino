@@ -20,17 +20,17 @@ e.g. Timer 1 has bit position constants :  CS12, CS11, CS10
 #endif
 #if defined(USE_ISR_TIMER_NUMBER2)
     ISR(TIMER2_COMPA_vect) {
-       // ISRTimer::timers[1]->onTimerInterrupt();
+        ISRTimer::timers[1]->onTimerInterrupt();
     }
 #endif
 #if defined(USE_ISR_TIMER_NUMBER3)
     ISR(TIMER3_COMPA_vect) {
-        //ISRTimer::timers[2]->onTimerInterrupt();
+        ISRTimer::timers[2]->onTimerInterrupt();
     }
 #endif
 #if defined(USE_ISR_TIMER_NUMBER4)
     ISR(TIMER4_COMPA_vect) {
-        //ISRTimer::timers[3]->onTimerInterrupt();
+        ISRTimer::timers[3]->onTimerInterrupt();
     }
 #endif
 
@@ -146,14 +146,14 @@ e.g. Timer 1 has bit position constants :  CS12, CS11, CS10
             case 0: prescale = 0; break;
             case 1: prescale = 1 << CS10; break;
             case 8: prescale = 1 << CS11; break;
-            case 64: prescale = 1 << CS11 | 1 << CS10; break;
+            case 64: prescale = (1 << CS11 | 1 << CS10); break;
             case 256: prescale = 1 << CS12; break;
-            case 1024: prescale = CS12 | 1 << CS10 ; break;
+            case 1024: prescale = (1 << CS12 | 1 << CS10); break;
             default:
                 prescale = 0;
                 break;
         }
-
+        
         switch(timerNumber){
             case 1:
                 //TCNT1, OCR1A, OCR1B, TCCR1A, TCCR1B, and TIMSK1
@@ -231,12 +231,12 @@ e.g. Timer 1 has bit position constants :  CS12, CS11, CS10
             }
             
             //here is a fresh registration
-            Serial.print("Adding listener with ID: ");
+            /*Serial.print("Adding listener with ID: ");
             Serial.println(id);
             Serial.print("To callback at index: ");
             Serial.println(idx);
             Serial.print("And set compare value to: ");
-            Serial.println(comp);
+            Serial.println(comp);*/
             callbacks[idx].id = id;
             callbacks[idx].onTimer = listener;
             callbackCount++;
