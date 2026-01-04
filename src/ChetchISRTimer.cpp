@@ -184,7 +184,10 @@ e.g. Timer 1 has bit position constants :  CS12, CS11, CS10
         }
 #endif
 
-        if(validTimer)disable();
+        if(validTimer){
+            disable();
+            *TCNTn = 0; //set counter to 0
+        }
     }
   
     bool ISRTimer::addListener(uint8_t id, TimerListener listener, int priority, uint16_t comp) {
@@ -357,7 +360,9 @@ e.g. Timer 1 has bit position constants :  CS12, CS11, CS10
 
     void ISRTimer::enable(){
         enabled = true;
+        *TCNTn = 0;
         *TIMSKn |= (1 << enableBitPosition);
+        *TCNTn = 0;
     }
     
     void ISRTimer::disable(){
@@ -369,12 +374,8 @@ e.g. Timer 1 has bit position constants :  CS12, CS11, CS10
         return enabled;
     }
   
-    void ISRTimer::setCompareA(uint16_t cnt, uint16_t comp){
-        *TCNTn = cnt; //set counter
-        *OCRnA  = comp; //set compare
-    }
-
     void ISRTimer::setCompareA(uint16_t comp){
+        *TCNTn = 0;
         *OCRnA  = comp; //set compare
     }
 

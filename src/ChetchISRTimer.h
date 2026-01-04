@@ -86,8 +86,7 @@ namespace Chetch{
             void onTimerInterrupt();
 
             bool isEnabled();
-			void setCompareA(uint16_t cnt, uint16_t comp);
-            void setCompareA(uint16_t comp);
+			void setCompareA(uint16_t comp);
             uint16_t getCompareA();
 			void enable();
 			void disable();
