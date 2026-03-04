@@ -8,6 +8,7 @@ namespace Chetch{
     class CADC{
 		public:
             enum class AnalogReference{
+              AREF_NONE,
               AREF_EXTERNAL,
               AREF_INTERNAL,
               AREF_INTERNAL1V1,

@@ -264,6 +264,9 @@ e.g. Timer 1 has bit position constants :  CS12, CS11, CS10
         if(idx >= 0){
             callbacks[idx].id = 0;
             callbacks[idx].onTimer = NULL;
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -313,8 +316,8 @@ e.g. Timer 1 has bit position constants :  CS12, CS11, CS10
     }
 
     void ISRTimer::onTimerInterrupt() {
-        static uint16_t interruptCount = 0;
-        static uint16_t counters[MAX_CALLBACKS];
+        //static uint16_t interruptCount = 0;
+        //static uint16_t counters[MAX_CALLBACKS];
 
         if (callbackCount == 0)return;
 

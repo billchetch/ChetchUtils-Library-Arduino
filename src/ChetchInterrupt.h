@@ -26,6 +26,18 @@ namespace Chetch{
         public:
             static bool addInterruptListener(uint8_t pinNumber, uint8_t tag, InterruptListener listener, uint8_t mode);
             static bool removeInterruptListener(uint8_t pinNumber);
+
+            static void enable(int8_t interruptDesignator, void (*userFunction)(void), uint8_t mode){
+#ifdef EnableInterrupt_h
+                enableInterrupt(interruptDesignator, handleInterrupt, mode);
+#endif
+            }
+
+            static void disable(int8_t interruptDesignator){
+#ifdef EnableInterrupt_h
+                disableInterrupt(interruptDesignator);
+#endif
+            }
     }; //end class
 } //end namespae
 #endif

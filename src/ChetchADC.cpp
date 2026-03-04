@@ -24,6 +24,9 @@ namespace Chetch{
                 ADMUX |= (1 << REFS0);  //turn on REFS0 bit
                 break;
 
+            default:
+                break;
+
         }
     }
 
@@ -60,6 +63,9 @@ namespace Chetch{
             case 3: //Internal2v56
                 //Serial.println("Internal2v56");
                 return AnalogReference::AREF_INTERNAL2V56;
+
+            default:
+                return AnalogReference::AREF_NONE;
         }
     }
 

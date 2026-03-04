@@ -1,6 +1,4 @@
 #include "ChetchInterrupt.h"
-#define EI_ARDUINO_INTERRUPTED_PIN
-#include <EnableInterrupt.h>
 
 namespace Chetch{
 
@@ -34,7 +32,7 @@ namespace Chetch{
 
     void CInterrupt::handleInterrupt()
     {
-        if (arduinoInterruptedPin == callbacks[0].pin) {
+        /*if (arduinoInterruptedPin == callbacks[0].pin) {
             callbacks[0].onInterrupt(arduinoInterruptedPin, callbacks[0].tag);
         } else if (arduinoInterruptedPin == callbacks[1].pin) {
             callbacks[1].onInterrupt(arduinoInterruptedPin, callbacks[1].tag);
@@ -42,8 +40,7 @@ namespace Chetch{
             callbacks[2].onInterrupt(arduinoInterruptedPin, callbacks[2].tag);
         } else if (arduinoInterruptedPin == callbacks[3].pin) {
             callbacks[3].onInterrupt(arduinoInterruptedPin, callbacks[3].tag);
-        } //else if.... add more here if required ... don't forget to increase MAX_PINS
-        
+        } //else if.... add more here if required ... don't forget to increase MAX_PINS*/
     }
 
     bool CInterrupt::addInterruptListener(uint8_t pinNumber, uint8_t tag, InterruptListener listener, uint8_t mode) {
@@ -60,8 +57,8 @@ namespace Chetch{
                 break;
             }
         }
-
-        enableInterrupt(pinNumber, handleInterrupt, mode);
+        //enableInterrupt(pinNumber, handleInterrupt, mode);
+        enable(pinNumber, handleInterrupt, mode);
         return true;
     }
 
@@ -78,7 +75,8 @@ namespace Chetch{
             }
         }
         if (found) {
-            disableInterrupt(pinNumber);
+            //disableInterrupt(pinNumber);
+            disable(pinNumber);
             return true;
         } else {
             return false;

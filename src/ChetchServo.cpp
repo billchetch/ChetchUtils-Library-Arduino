@@ -73,8 +73,6 @@ namespace Chetch{
         }
         unsigned int comp = timer->microsToTicks(m);
         timer->setCompareValue(0, comp);
-
-        return servo;
     }
 
     void Servo::handleTimerInterrupt(uint8_t id){
@@ -174,8 +172,8 @@ namespace Chetch{
 
         //Serial.print("Attemption to write microseconds: "); Serial.println(microseconds);
 
-        pulseHighInInterrupts = timer->microsToInterrupts(&Servo::handleTimerInterrupt, microseconds);
-        pulseLowInInterrupts = timer->microsToInterrupts(&Servo::handleTimerInterrupt, pwmDuration - microseconds);
+        pulseHighInInterrupts = timer->microsToInterrupts(0, microseconds);
+        pulseLowInInterrupts = timer->microsToInterrupts(0, pwmDuration - microseconds);
 
         //Serial.print("Setting pulse high in interrupts to: "); Serial.println(pulseHighInInterrupts);
         //Serial.print("Setting pulse low in interrupts to: "); Serial.println(pulseLowInInterrupts);
