@@ -14,9 +14,11 @@ e.g. Timer 1 has bit position constants :  CS12, CS11, CS10
 */
 
 #if defined(USE_ISR_TIMER_NUMBER1)
+#ifndef TIMER1_COMPA_vect
     ISR(TIMER1_COMPA_vect) {
         ISRTimer::timers[0]->onTimerInterrupt();
     }
+#endif
 #endif
 #if defined(USE_ISR_TIMER_NUMBER2)
     ISR(TIMER2_COMPA_vect) {

@@ -10,7 +10,7 @@ namespace Chetch{
             enum class AnalogReference{
               AREF_NONE,
               AREF_EXTERNAL,
-              AREF_INTERNAL,
+              AREF_INTERNAL, //This is the also the default value
               AREF_INTERNAL1V1,
               AREF_INTERNAL2V56,
             };
