@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+//TODO: make this board dependent
+#define ADC_INTERNAL_VLOTAGE 5.0
+
 namespace Chetch{
     
     class CADC{
@@ -23,6 +26,7 @@ namespace Chetch{
             static void startRead(int analogPin);
 			static bool isReading();
             static uint16_t readResult();
+            static double getVoltage(unsigned int val, AnalogReference aref = AnalogReference::AREF_INTERNAL);
     }; //end class
 } //end namespae
 #endif

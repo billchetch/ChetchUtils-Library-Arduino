@@ -1,5 +1,6 @@
 #include "ChetchADC.h"
 
+
 namespace Chetch{
     void CADC::init(AnalogReference areference){
         switch(areference){
@@ -86,4 +87,25 @@ namespace Chetch{
     uint16_t CADC::readResult(){
         return (ADCL | (ADCH << 8)); 
     }
+
+    double CADC::getVoltage(uint16_t val, AnalogReference aref){
+        double v = (double)val / 1023;
+        switch(aref){
+            case AnalogReference::AREF_EXTERNAL:
+                return 0; //needs to be calculated by caller
+
+            case AnalogReference::AREF_INTERNAL:
+                return ADC_INTERNAL_VLOTAGE * v; //this value of 5.0 should be a 
+
+            case AnalogReference::AREF_INTERNAL1V1:
+                return 1.1 * v;
+
+            case AnalogReference::AREF_INTERNAL2V56:
+                return 2.5 * v;
+
+            default:
+                return 0;
+        }
+    }
+
 } //end namespace
